@@ -1,0 +1,27 @@
+# Agentfield configuration for Trip Planner Agent Network
+version: "1.0"
+
+agents:
+  coordinator-agent:
+    path: ./agents/coordinator_agent
+    port: 8000
+    depends_on:
+      - weather-agent
+      - search-agent
+      - location-agent
+
+  weather-agent:
+    path: ./agents/weather_agent
+    port: 8001
+
+  search-agent:
+    path: ./agents/search_agent
+    port: 8002
+
+  location-agent:
+    path: ./agents/location_agent
+    port: 8003
+
+server:
+  host: "0.0.0.0"
+  port: 9000

@@ -1,0 +1,106 @@
+version: '3.8'
+
+services:
+  # Agentfield Control Plane Server
+  agentfield-server:
+    image: agentfield/control-plane:latest
+    ports:
+      - "9000:9000"
+    environment:
+      - AF_LOG_LEVEL=info
+    networks:
+      - trip-planner-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # Coordinator Agent
+  coordinator-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile.agent
+    environment:
+      - AGENT_NODE_ID=coordinator-agent
+      - AGENT_PORT=8000
+      - AGENT_CALLBACK_URL=http://agentfield-server:9000
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    command: python agents/coordinator_agent/main.py
+    ports:
+      - "8000:8000"
+    depends_on:
+      agentfield-server:
+        condition: service_healthy
+      weather-agent:
+        condition: service_started
+      search-agent:
+        condition: service_started
+      location-agent:
+        condition: service_started
+    networks:
+      - trip-planner-network
+
+  # Weather Agent
+  weather-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile.agent
+    environment:
+      - AGENT_NODE_ID=weather-agent
+      - AGENT_PORT=8001
+      - AGENT_CALLBACK_URL=http://agentfield-server:9000
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    command: python agents/weather_agent/main.py
+    ports:
+      - "8001:8001"
+    depends_on:
+      agentfield-server:
+        condition: service_healthy
+    networks:
+      - trip-planner-network
+
+  # Search Agent
+  search-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile.agent
+    environment:
+      - AGENT_NODE_ID=search-agent
+      - AGENT_PORT=8002
+      - AGENT_CALLBACK_URL=http://agentfield-server:9000
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - BRIGHT_DATA_API_KEY=${BRIGHT_DATA_API_KEY}
+      - BRIGHT_DATA_ZONE=${BRIGHT_DATA_ZONE:-serp}
+    command: python agents/search_agent/main.py
+    ports:
+      - "8002:8002"
+    depends_on:
+      agentfield-server:
+        condition: service_healthy
+    networks:
+      - trip-planner-network
+
+  # Location Agent
+  location-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile.agent
+    environment:
+      - AGENT_NODE_ID=location-agent
+      - AGENT_PORT=8003
+      - AGENT_CALLBACK_URL=http://agentfield-server:9000
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - GOOGLE_GEO_API_KEY=${GOOGLE_GEO_API_KEY}
+    command: python agents/location_agent/main.py
+    ports:
+      - "8003:8003"
+    depends_on:
+      agentfield-server:
+        condition: service_healthy
+    networks:
+      - trip-planner-network
+
+networks:
+  trip-planner-network:
+    driver: bridge
