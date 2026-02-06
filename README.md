@@ -125,6 +125,16 @@ GOOGLE_GEO_API_KEY=your_google_api_key
 
 ## Running the Agents
 
+### Prerequisite: Start Agentfield Server
+
+Before running the agents, you need to start the Agentfield control plane server:
+
+```bash
+af server
+```
+
+This starts the central coordination server that agents connect to. Keep this running in a separate terminal.
+
 ### Option 1: Using the Startup Script (Recommended)
 
 ```bash
@@ -139,6 +149,12 @@ This script will:
 
 ### Option 2: Manual Startup
 
+First, ensure the Agentfield server is running in another terminal:
+```bash
+af server
+```
+
+Then start each agent:
 ```bash
 # Set PYTHONPATH and start each agent
 export PYTHONPATH=$PWD:$PYTHONPATH
@@ -152,12 +168,14 @@ python agents/coordinator_agent/main.py &
 ### Option 3: Using Docker Compose
 
 ```bash
-# Build and start all services
+# Build and start all services including the Agentfield server
 docker-compose up --build
 
 # Or run in detached mode
 docker-compose up -d --build
 ```
+
+Note: The docker-compose setup includes the Agentfield server as a service, so you don't need to run `af server` separately.
 
 ### Stopping Agents
 
